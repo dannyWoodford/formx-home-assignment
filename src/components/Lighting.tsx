@@ -15,7 +15,7 @@ export default function Lighting() {
         </pointLight>
 
         <directionalLight
-          position={[11, 36, -32]}
+          position={[11, 26, -22]}
           castShadow
           intensity={5}
           shadow-mapSize={2048}
