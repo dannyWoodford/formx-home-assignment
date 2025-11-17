@@ -9,8 +9,8 @@ import Floor from './components/Floor'
 import KeyboardRotationControls from './components/controls/KeyboardRotationControls'
 
 function Scene() {
-  const { performance } = useControls('Monitoring', {
-    performance: true,
+  const { enable } = useControls('Stats', {
+    enable: true,
   })
 
   const { color } = useControls('Background', {
@@ -19,7 +19,7 @@ function Scene() {
 
   return (
     <>
-      {performance && <Perf position='top-left' />}
+      {enable && <Perf position='bottom-right' />}
       <fog attach='fog' args={['#15151a', 1, 60]} />
       <color attach='background' args={[color]} />
 
