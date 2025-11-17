@@ -1,11 +1,7 @@
 import { OrbitControls } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
 import { useControls } from 'leva'
 import { Perf } from 'r3f-perf'
-import { useRef } from 'react'
-import { BoxGeometry, Mesh, MeshBasicMaterial } from 'three'
-import { Cube } from './components/Cube'
-import { Sphere } from './components/Sphere'
+import Cube from './components/Cube'
 import Lighting from './components/Lighting'
 import Floor from './components/Floor'
 
@@ -13,22 +9,10 @@ function Scene() {
   const { performance } = useControls('Monitoring', {
     performance: true,
   })
-
-  const { animate } = useControls('Cube', {
-    animate: true,
-  })
 	
 	const { color } = useControls('Background', {
 		color: "#171616",
 	})
-
-  const cubeRef = useRef<Mesh<BoxGeometry, MeshBasicMaterial>>(null)
-
-  useFrame((_, delta) => {
-    if (animate) {
-      cubeRef.current!.rotation.y += delta / 3
-    }
-  })
 
 
   return (
@@ -41,8 +25,7 @@ function Scene() {
 
 			<Lighting />
 
-      <Cube ref={cubeRef} />
-      <Sphere />
+      <Cube />
 			<Floor />
     </>
   )
