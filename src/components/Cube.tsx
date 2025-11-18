@@ -1,31 +1,84 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
-import type { MeshStandardMaterialParameters } from 'three'
-import { Html } from '@react-three/drei'
+import type { MeshStandardMaterialParameters, Texture, Vector2Tuple } from 'three'
+import { Html, useTexture } from '@react-three/drei'
+import { RepeatWrapping, SRGBColorSpace, DoubleSide, Vector2 } from 'three'
 import { useControls } from 'leva'
 
-const FACE_PRESET_OPTIONS = ['wood', 'glass', 'grass'] as const
+const DEFAULT_PRESET: FaceMaterialPreset = 'brick'
+const FACE_PRESET_OPTIONS = ['brick', 'shingle', 'metal', 'fabric'] as const
 type FaceMaterialPreset = (typeof FACE_PRESET_OPTIONS)[number]
 
-const FACE_MATERIAL_PRESETS: Record<FaceMaterialPreset, Partial<MeshStandardMaterialParameters>> = {
-	wood: {
-		color: 'red',
-		metalness: 0.2,
-		roughness: 0.65,
+type MaterialTextures = Partial<Record<'map' | 'normalMap' | 'roughnessMap' | 'metalnessMap' | 'aoMap' | 'displacementMap', string>>
+
+type MaterialDefinition = {
+	defaults: Partial<MeshStandardMaterialParameters>
+	textures?: MaterialTextures
+	textureRepeat?: number
+	normalScale?: Vector2Tuple
+}
+
+const MATERIAL_DEFINITIONS: Record<FaceMaterialPreset, MaterialDefinition> = {
+	brick: {
+		defaults: {
+			metalness: 0,
+			roughness: 0.85,
+			color: '#ffffff',
+		},
+		textures: {
+			map: '/textures/brick/Poliigon_BrickWallReclaimed_8320_BaseColor.jpg',
+			normalMap: '/textures/brick/Poliigon_BrickWallReclaimed_8320_Normal.png',
+			roughnessMap: '/textures/brick/Poliigon_BrickWallReclaimed_8320_Roughness.jpg',
+			metalnessMap: '/textures/brick/Poliigon_BrickWallReclaimed_8320_Metallic.jpg',
+			aoMap: '/textures/brick/Poliigon_BrickWallReclaimed_8320_AmbientOcclusion.jpg',
+		},
+		textureRepeat: 0.2,
+		normalScale: [1, 1],
 	},
-	glass: {
-		color: 'blue',
-		metalness: 0.05,
-		roughness: 0.12,
-		transparent: true,
-		opacity: 0.55,
-		envMapIntensity: 1.2,
+	shingle: {
+		defaults: {
+			metalness: 0,
+			roughness: 0.9,
+		},
+		textures: {
+			map: '/textures/shingle/Poliigon_WoodRoofShingle_7834_BaseColor.jpg',
+			normalMap: '/textures/shingle/Poliigon_WoodRoofShingle_7834_Normal.png',
+			roughnessMap: '/textures/shingle/Poliigon_WoodRoofShingle_7834_Roughness.jpg',
+			metalnessMap: '/textures/shingle/Poliigon_WoodRoofShingle_7834_Metallic.jpg',
+			aoMap: '/textures/shingle/Poliigon_WoodRoofShingle_7834_AmbientOcclusion.jpg',
+		},
+		textureRepeat: 0.3,
+		normalScale: [0.8, 0.8],
 	},
-	grass: {
-		color: 'green',
-		metalness: 0.05,
-		roughness: 0.9,
-		emissiveIntensity: 0.05,
+	metal: {
+		defaults: {
+			metalness: 1,
+			roughness: 0.7,
+			envMapIntensity: 1.1,
+		},
+		textures: {
+			map: '/textures/metal/MetalCorrodedHeavy001_COL_1K_METALNESS.jpg',
+			normalMap: '/textures/metal/MetalCorrodedHeavy001_NRM_1K_METALNESS.jpg',
+			roughnessMap: '/textures/metal/MetalCorrodedHeavy001_ROUGHNESS_1K_METALNESS.jpg',
+			metalnessMap: '/textures/metal/MetalCorrodedHeavy001_METALNESS_1K_METALNESS.jpg',
+		},
+		textureRepeat: 0.6,
+		normalScale: [1.2, 1.2],
+	},
+	fabric: {
+		defaults: {
+			metalness: 0,
+			roughness: 0.8,
+		},
+		textures: {
+			map: '/textures/fabric/Poliigon_BoucleFabricBubbly_7827_BaseColor.jpg',
+			normalMap: '/textures/fabric/Poliigon_BoucleFabricBubbly_7827_Normal.png',
+			roughnessMap: '/textures/fabric/Poliigon_BoucleFabricBubbly_7827_Roughness.jpg',
+			metalnessMap: '/textures/fabric/Poliigon_BoucleFabricBubbly_7827_Metallic.jpg',
+			aoMap: '/textures/fabric/Poliigon_BoucleFabricBubbly_7827_AmbientOcclusion.jpg',
+		},
+		textureRepeat: 0.9,
+		normalScale: [0.6, 0.6],
 	},
 }
 
@@ -35,15 +88,74 @@ export default function Cube() {
 		{
 			material: {
 				value: "PBR",
-				options: ["PBR", "basic"],
+				options: ["PBR", "Basic"],
 			},
 		},
 		{ collapsed: false }
 	)
 	const [selectedFace, setSelectedFace] = useState<number | null>(null)
 	const [facePresets, setFacePresets] = useState<FaceMaterialPreset[]>(() =>
-		Array(6).fill('wood')
+		Array(6).fill(DEFAULT_PRESET)
 	)
+
+	const shingleTextures = useTexture(
+		MATERIAL_DEFINITIONS.shingle.textures ?? {}
+	) as Partial<Record<keyof MaterialTextures, Texture>>
+	const brickTextures = useTexture(
+		MATERIAL_DEFINITIONS.brick.textures ?? {}
+	) as Partial<Record<keyof MaterialTextures, Texture>>
+	const metalTextures = useTexture(
+		MATERIAL_DEFINITIONS.metal.textures ?? {}
+	) as Partial<Record<keyof MaterialTextures, Texture>>
+	const fabricTextures = useTexture(
+		MATERIAL_DEFINITIONS.fabric.textures ?? {}
+	) as Partial<Record<keyof MaterialTextures, Texture>>
+
+	const materialConfigs = useMemo<
+		Record<FaceMaterialPreset, Partial<MeshStandardMaterialParameters>>
+	>(() => {
+		const configs: Record<FaceMaterialPreset, Partial<MeshStandardMaterialParameters>> = {
+			shingle: MATERIAL_DEFINITIONS.shingle.defaults,
+			brick: MATERIAL_DEFINITIONS.brick.defaults,
+			metal: MATERIAL_DEFINITIONS.metal.defaults,
+			fabric: MATERIAL_DEFINITIONS.fabric.defaults,
+		}
+
+		const applyTextures = (
+			targetKey: FaceMaterialPreset,
+			textures: Partial<Record<keyof MaterialTextures, Texture>>,
+			definition: MaterialDefinition
+		) => {
+			if (!definition.textures) return
+			const repeat = definition.textureRepeat ?? 1
+
+			Object.values(textures).forEach((texture) => {
+				if (!texture) return
+				texture.wrapS = RepeatWrapping
+				texture.wrapT = RepeatWrapping
+				texture.repeat.set(repeat, repeat)
+			})
+
+			if (textures.map) {
+				textures.map.colorSpace = SRGBColorSpace
+			}
+
+			configs[targetKey] = {
+				...definition.defaults,
+				...textures,
+				...(definition.normalScale && {
+					normalScale: new Vector2(...definition.normalScale),
+				}),
+			}
+		}
+
+		applyTextures('shingle', shingleTextures, MATERIAL_DEFINITIONS.shingle)
+		applyTextures('brick', brickTextures, MATERIAL_DEFINITIONS.brick)
+		applyTextures('metal', metalTextures, MATERIAL_DEFINITIONS.metal)
+		applyTextures('fabric', fabricTextures, MATERIAL_DEFINITIONS.fabric)
+
+		return configs
+	}, [shingleTextures, brickTextures, metalTextures, fabricTextures])
 
 	const handlePresetChange = useCallback((faceIndex: number, nextPreset: FaceMaterialPreset) => {
 		setFacePresets((prev) => {
@@ -83,10 +195,10 @@ export default function Cube() {
 
 	const faceMaterials = useMemo(() => {
 		return facePresets.map((presetKey, index) => {
-			const preset = FACE_MATERIAL_PRESETS[presetKey]
+			const preset = materialConfigs[presetKey]
 			const isSelected = material === 'PBR' && selectedFace === index
 			const highlightProps = isSelected
-				? { emissive: '#ffe26f', emissiveIntensity: 0.1 }
+				? { emissive: 'white', emissiveIntensity: 0.03 }
 				: {}
 
 			return (
@@ -95,21 +207,22 @@ export default function Cube() {
 					attach={`material-${index}`}
 					{...preset}
 					{...highlightProps}
+					side={DoubleSide}
 				/>
 			)
 		})
-	}, [facePresets, material, selectedFace])
+	}, [facePresets, material, materialConfigs, selectedFace])
 
 	return (
 		<mesh position={[0, 0, 0]} castShadow onPointerDown={handlePointerDown}>
 			<boxGeometry args={[1.5, 1.5, 1.5]} />
-			{material === "basic" && (
+			{material === "Basic" && (
 				<meshBasicMaterial color={'mediumpurple'} />
 			)}
 			{material === "PBR" && (
 				<>
 					{faceMaterials}
-					<Html className='face-select-container'fullscreen transform={false} pointerEvents='auto'>
+					<Html wrapperClass='face-select-container-wrapper' className='face-select-container' fullscreen transform={false}>
 						<div style={uiWrapperStyle}>
 							<div style={panelStyle}>
 								{facePresets.map((preset, index) => {

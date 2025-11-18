@@ -14,13 +14,13 @@ function Scene() {
   })
 
   const { color } = useControls('Background', {
-    color: '#171616',
+		color: '#1a1a1a',
   })
 
   return (
     <>
       {enable && <Perf position='bottom-left' />}
-      <fog attach='fog' args={['#15151a', 1, 60]} />
+      <fog attach='fog' args={['#1a1a1a', 1, 60]} />
       <color attach='background' args={[color]} />
 
       <OrbitControls maxDistance={35} makeDefault />

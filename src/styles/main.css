@@ -31,8 +31,16 @@ body {
   height: 100%;
 }
 
+.face-select-container-wrapper {
+	transform: none !important;
+}
+
 .face-select-container {
 	pointer-events: none !important;
+	top: 0 !important;
+	bottom: auto !important;
+	left: 0 !important;
+	right: auto !important;
 }
 
 .face-select-container > div {
