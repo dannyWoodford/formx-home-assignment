@@ -30,3 +30,11 @@ body {
   width: 100%;
   height: 100%;
 }
+
+.face-select-container {
+	pointer-events: none !important;
+}
+
+.face-select-container > div {
+	pointer-events: auto !important;
+}

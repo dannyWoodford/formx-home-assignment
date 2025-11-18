@@ -19,7 +19,7 @@ function Scene() {
 
   return (
     <>
-      {enable && <Perf position='bottom-right' />}
+      {enable && <Perf position='bottom-left' />}
       <fog attach='fog' args={['#15151a', 1, 60]} />
       <color attach='background' args={[color]} />
 
