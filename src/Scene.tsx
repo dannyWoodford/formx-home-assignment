@@ -14,7 +14,7 @@ function Scene() {
   })
 
   const { color } = useControls('Background', {
-		color: '#1a1a1a',
+    color: '#1a1a1a',
   })
 
   return (
@@ -27,6 +27,7 @@ function Scene() {
 
       <Lighting />
 
+      {/* Use Arrows on Keyboard to rotate Cube  */}
       <KeyboardRotationControls
         rotationSpeed={3}
         enabledAxes={{

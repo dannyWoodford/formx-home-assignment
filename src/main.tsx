@@ -8,9 +8,7 @@ import './styles/main.css'
 function Main() {
   return (
     <div className='main'>
-      <Leva
-        collapsed={false}
-      />
+      <Leva collapsed={false} />
       <Canvas
         dpr={[1, 2]}
         camera={{
